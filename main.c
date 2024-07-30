@@ -47,8 +47,8 @@ void list_content_v2(char * path)
     struct stat statbuf;
     struct node * current;
 
-    d = opendir(path); //deschidem folderul
-    if(d != NULL)  //exista posibilitatea ca path-ul sa nu fie bun
+    d = opendir(path);
+    if(d != NULL)
     {
         struct node * folder = malloc(sizeof(struct node));
         folder->path = path;
@@ -58,7 +58,6 @@ void list_content_v2(char * path)
 
         do
         {
-            //nu putem pune while deoarece nu exista mmt un urmator si se opreste
             while ((dir = readdir(d)) != NULL)
             {
                 
@@ -69,12 +68,6 @@ void list_content_v2(char * path)
                 }
 
                 //we build the subpath to the next directory
-
-                /*
-                printf("Debug - %s\n", current->path);
-                printf("Debug - %s", dir->d_name);
-                printf("\n\n\n");
-                */
 
                 char * subpath = (char*)malloc(strlen(current->path) + strlen(dir->d_name) + 2);
                 strcpy(subpath, current->path);
@@ -93,10 +86,10 @@ void list_content_v2(char * path)
                 {
                     printf("\t-\t[Directory]\n");
 
-                    folder->next = malloc(sizeof(struct node)); //we allocate memory for the next node
-                    folder = folder->next; //we go to the next node
-                    folder->path = subpath; //we put the path to this node
-                    folder->next = NULL;  //the next is null
+                    folder->next = malloc(sizeof(struct node));
+                    folder = folder->next;
+                    folder->path = subpath;
+                    folder->next = NULL;
                 }
                 else
                 {
