@@ -25,7 +25,6 @@ int main()
         printf("Error opening input file!");
         return 1;
     }
-
     
     while(fgets(buffer, 100, fileIn) != NULL)
     {
@@ -35,7 +34,6 @@ int main()
 
     char * path = "C:\\";
     list_content_v2(path);
-    while(1);
 
     return 0;
 }
@@ -45,13 +43,15 @@ void list_content_v2(char * path)
     DIR * d;
     struct dirent *dir;
     struct stat statbuf;
-    struct node * current;
+    struct node * current = NULL;
 
     d = opendir(path);
+
     if(d != NULL)
     {
         struct node * folder = malloc(sizeof(struct node));
-        folder->path = path;
+        folder->path = (char *)malloc(strlen(path) + 1);
+        strcpy(folder->path, path);
         folder->next = NULL;
 
         current = folder;
@@ -60,7 +60,6 @@ void list_content_v2(char * path)
         {
             while ((dir = readdir(d)) != NULL)
             {
-                
                 if(strcmp(dir->d_name,".") == 0 || strcmp(dir->d_name,"..") == 0)
                 {
                     //skip the "." and ".." files
@@ -73,7 +72,7 @@ void list_content_v2(char * path)
                 strcpy(subpath, current->path);
                 strcat(subpath, "\\");
                 strcat(subpath, dir->d_name);
-                printf("%s ", subpath); //this is the subpath to each element inside the folder we are currently using
+                printf("%s ", subpath);
 
                 if(stat(subpath, &statbuf) == -1)
                 {
@@ -94,16 +93,20 @@ void list_content_v2(char * path)
                 else
                 {
                     printf("\t-\t[File]\n");
+                    free(subpath);
+                    subpath = NULL;
                 }
-                
+
             }
+
             struct node * garb = current;
             current = current->next;
             free(garb->path);
             garb->path = NULL;
+            garb->next = NULL;
             free(garb);
             garb = NULL;
-            
+
             closedir(d);
             if(current != NULL)
             {
