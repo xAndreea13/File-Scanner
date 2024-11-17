@@ -3,62 +3,56 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <pthread.h>
+#include "include/double_linked_list.h"
 
 void list_content(char * path);
 void list_content_v2(char * path);
+void scan(size_t size, char * path);
 
 //simple linked list
 struct node
 {
+    struct list_node node;
     char * path;
-    struct node * next;
 };
 
 int main()
 {
-    /*
-    FILE *fileIn;
-    fileIn = fopen("input.txt", "r");
-
-    if(fileIn == NULL)
-    {
-        printf("Error opening input file!");
-        return 1;
-    }
-    
-    while(fgets(buffer, 100, fileIn) != NULL)
-    {
-        printf("%s", buffer);
-    }
-    */
-
-    char * path = "C:\\";
+    char * path = "C:\\MinGW";
     list_content_v2(path);
 
     return 0;
 }
 
+
+//listing function
 void list_content_v2(char * path)
 {
     DIR * d;
     struct dirent *dir;
     struct stat statbuf;
-    struct node * current = NULL;
+    struct list_head lh;  //we create the list_head
+    double_linked_list_init(&lh); //we initialize it
+
+    struct node * current = NULL;  //a pointer to the current node in the list
 
     d = opendir(path);
 
     if(d != NULL)
     {
-        struct node * folder = malloc(sizeof(struct node));
-        folder->path = (char *)malloc(strlen(path) + 1);
-        strcpy(folder->path, path);
-        folder->next = NULL;
-
-        current = folder;
+        struct node * folder = (struct node *)malloc(sizeof(struct node));  //we create a node 
+        add_end_node(&lh, &folder->node); //we add it to the list
+        folder->path = (char *)malloc(strlen(path) + 1);  //we allocate memory for the path
+        strcpy(folder->path, path);  //we copy the path of the folder
+        current = folder; //the current folder is the first folder
+        /*
+        At this point, we have a list with 1 node
+        */
 
         do
         {
-            while ((dir = readdir(d)) != NULL)
+            while ((dir = readdir(d)) != NULL)  //as long as there is something to read inside the folder
             {
                 if(strcmp(dir->d_name,".") == 0 || strcmp(dir->d_name,"..") == 0)
                 {
@@ -67,13 +61,13 @@ void list_content_v2(char * path)
                 }
 
                 //we build the subpath to the next directory
-
                 char * subpath = (char*)malloc(strlen(current->path) + strlen(dir->d_name) + 2);
                 strcpy(subpath, current->path);
                 strcat(subpath, "\\");
                 strcat(subpath, dir->d_name);
                 printf("%s ", subpath);
-
+                
+                //we check if the path is a directory or a file
                 if(stat(subpath, &statbuf) == -1)
                 {
                     printf("Error recognising file type for %s\n", subpath);
@@ -85,14 +79,24 @@ void list_content_v2(char * path)
                 {
                     printf("\t-\t[Directory]\n");
 
-                    folder->next = malloc(sizeof(struct node));
-                    folder = folder->next;
-                    folder->path = subpath;
-                    folder->next = NULL;
+                    folder = (struct node *)malloc(sizeof(struct node));  //we create a new node
+
+                    if(folder != NULL)
+                    {
+                        add_end_node(&lh, &folder->node); //we add it to the list
+                        folder->path = subpath;
+                    }
                 }
                 else
                 {
                     printf("\t-\t[File]\n");
+
+                    /*
+                    Here should the scanning take place?
+                    */
+
+                    //(*ptr)(statbuf.st_size, subpath);
+
                     free(subpath);
                     subpath = NULL;
                 }
@@ -100,10 +104,10 @@ void list_content_v2(char * path)
             }
 
             struct node * garb = current;
-            current = current->next;
+            current = (struct node*)get_next_node(&current->node);  //the address of list_node is the same as the one of the node
+            remove_node(&lh, &garb->node);
+
             free(garb->path);
-            garb->path = NULL;
-            garb->next = NULL;
             free(garb);
             garb = NULL;
 
